@@ -1,0 +1,23 @@
+# Используем легкий образ Python (Slim)
+FROM python:3.9-slim
+
+# Устанавливаем рабочую папку
+WORKDIR /app
+
+# Устанавливаем системные пакеты для работы mysqlclient
+RUN apt-get update && apt-get install -y \
+    default-libmysqlclient-dev \
+    pkg-config \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Копируем зависимости и устанавливаем их
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Копируем код приложения и json файл
+COPY app.py .
+COPY users.json .
+
+# Запускаем приложение
+ENTRYPOINT ["python", "app.py"]

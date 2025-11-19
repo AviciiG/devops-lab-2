@@ -1,0 +1,25 @@
+- hosts: all
+  become: yes
+  tasks:
+    - name: Install Docker and Dependencies
+      apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: yes
+      loop:
+        - docker.io
+        - curl
+        - python3-pip
+
+    - name: Install Kubectl
+      shell: |
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+    - name: Copy K8s Manifests
+      copy:
+        src: ./k8s_manifests/
+        dest: /home/devops/k8s_project/
+
+    - name: Apply K8s Configuration
+      command: kubectl apply -f /home/devops/k8s_project/

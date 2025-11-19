@@ -1,0 +1,29 @@
+pipeline {
+    agent any
+    environment {
+        DOCKER_IMAGE = 'AviciiG/python-devops:latest'
+    }
+    stages {
+        stage('Build Setup') {
+            steps {
+                // Проверка синтаксиса Python
+                sh 'python3 -m py_compile app.py'
+            }
+        }
+        stage('Docker Build') {
+            steps {
+                // Сборка образа
+                sh "docker build -f Dockerfile_AsemZhan -t ${DOCKER_IMAGE} ."
+            }
+        }
+        stage('Push to Hub') {
+            steps {
+                // Пуш в DockerHub (нужны credentials в Jenkins)
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    sh 'docker login -u $USER -p $PASS'
+                    sh "docker push ${DOCKER_IMAGE}"
+                }
+            }
+        }
+    }
+}
