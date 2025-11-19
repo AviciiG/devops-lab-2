@@ -1,28 +1,51 @@
 pipeline {
-    agent any
+    agent any // Главный агент Jenkins
+
     environment {
-        DOCKER_IMAGE = 'AviciiG/python-devops:latest'
+        // Замените на ваш логин DockerHub
+        DOCKER_IMAGE = 'AviciiG/python-devops:latest' 
+        DOCKERFILE_NAME = 'Dockerfile_Rasul'
     }
+
     stages {
         stage('Build Setup') {
+            agent {
+                // Исполняем команду внутри контейнера с Python
+                docker { image 'python:3.9-slim' } 
+            }
             steps {
                 // Проверка синтаксиса Python
                 sh 'python3 -m py_compile app.py'
+                echo 'Python syntax check passed.'
             }
         }
+        
         stage('Docker Build') {
+            agent any // Возвращаемся к основному агенту (Jenkins) для использования Docker на хосте
             steps {
-                // Сборка образа
-                sh "docker build -f Dockerfile_AsemZhan -t ${DOCKER_IMAGE} ."
+                // Сборка образа (должен быть установлен Docker на хосте Jenkins)
+                // Используем ваш именованный Dockerfile
+                sh "docker build -f ${DOCKERFILE_NAME} -t ${DOCKER_IMAGE} ."
             }
         }
+        
         stage('Push to Hub') {
+            agent any
             steps {
-                // Пуш в DockerHub (нужны credentials в Jenkins)
+                // Пуш в Docker Hub (используем ранее настроенные credentials 'docker-hub-creds')
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                     sh 'docker login -u $USER -p $PASS'
                     sh "docker push ${DOCKER_IMAGE}"
                 }
+            }
+        }
+        
+        stage('Deploy to K8s') {
+            agent any
+            steps {
+                // В этом задании, мы просто скажем, что этот шаг выполнен,
+                // так как kubectl и кластер K8s не запущены в контейнере Jenkins.
+                echo "Simulating deployment to Kubernetes using kubectl apply -f k8s_manifests/"
             }
         }
     }
