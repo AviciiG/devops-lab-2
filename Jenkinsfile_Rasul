@@ -1,11 +1,11 @@
 pipeline {
-    // Используем 'agent none' глобально, так как мы явно определяем контейнер внутри первой стадии.
+    // Используем 'agent none' глобально
     agent none 
 
     // Определяем переменные
     environment {
-        // Ваш логин DockerHub (уже исправлено на AviciiG)
-        DOCKER_IMAGE = 'AviciiG/python-devops:latest' 
+        // Мы все равно определяем имя образа для локальной сборки
+        DOCKER_IMAGE = 'aviciig/python-devops:latest' 
         DOCKERFILE_NAME = 'Dockerfile_Rasul'
     }
 
@@ -13,8 +13,7 @@ pipeline {
         stage('Build Setup (Python Lint)') {
             steps {
                 echo 'Starting Python syntax check inside Python container...'
-                // Используем Scripted-синтаксис 'docker.image().inside{}', который 
-                // работает, даже если плагин 'Docker Pipeline' установлен некорректно.
+                // Шаг 1: Проверка синтаксиса Python внутри временного контейнера
                 script {
                     docker.image('python:3.9-slim').inside { 
                         sh 'python3 -m py_compile app.py'
@@ -25,32 +24,22 @@ pipeline {
         }
         
         stage('Docker Build') {
-            // Используем 'agent any' для выполнения команды 'docker' на хосте Jenkins
+            // Шаг 2: Сборка Docker-образа на хосте
             agent any
             steps {
                 echo 'Building Docker image...'
-                // Если 'docker' не будет найден, это означает, что нужно чинить Docker-доступ.
+                // Команда сборки образа с указанием вашего именованного Dockerfile
                 sh "docker build -f ${DOCKERFILE_NAME} -t ${DOCKER_IMAGE} ."
+                echo "Image ${DOCKER_IMAGE} built successfully locally."
             }
         }
         
-        stage('Push to Hub') {
+        stage('Deploy Simulation') {
+            // Шаг 3: Имитация деплоя
             agent any
             steps {
-                echo 'Pushing image to Docker Hub...'
-                // Используем Credential ID, который вы должны были создать: 'docker-hub-creds'
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                    sh 'docker login -u $USER -p $PASS'
-                    sh "docker push ${DOCKER_IMAGE}"
-                }
-            }
-        }
-        
-        stage('Deploy to K8s') {
-            agent any
-            steps {
-                echo 'Simulating deployment to Kubernetes...'
-                sh "echo Deployment started: kubectl apply -f k8s_manifests/"
+                echo 'Skipping Push to Docker Hub, proceeding to Deploy Simulation...'
+                echo 'Simulating deployment to Kubernetes using kubectl apply...'
             }
         }
     }

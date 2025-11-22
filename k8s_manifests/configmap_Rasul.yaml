@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: app-config
+  name: app-config-rasul
 data:
-  DB_HOST: "mysql-service"
-  DB_NAME: "devops_lab"
-  DB_USER: "devops"
+  db_host: "mysql-service"
+  db_name: "devops_lab"
+  app_mode: "production"

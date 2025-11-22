@@ -1,41 +1,46 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: python-webapp
+  name: python-app-deployment-rasul
+  labels:
+    app: python-devops
+    owner: rasul
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: python-web
+      app: python-devops
   template:
     metadata:
       labels:
-        app: python-web
+        app: python-devops
     spec:
       containers:
-      - name: web
-        # ВАЖНО: Сюда потом подставится ваш образ из DockerHub
-        image: AviciiG/python-devops:latest 
+      - name: python-app-rasul
+        # Указываем ваш образ
+        image: aviciig/python-devops:latest 
         ports:
         - containerPort: 8080
         env:
+        # Подтягиваем переменные из ConfigMap (требование Part 3)
         - name: DB_HOST
           valueFrom:
             configMapKeyRef:
-              name: app-config
-              key: DB_HOST
+              name: db-config-rasul
+              key: db_host
         - name: DB_NAME
           valueFrom:
             configMapKeyRef:
-              name: app-config
-              key: DB_NAME
+              name: db-config-rasul
+              key: db_name
+        # Подтягиваем пароль из Secret (требование Part 3)
         - name: DB_USER
           valueFrom:
-            configMapKeyRef:
-              name: app-config
-              key: DB_USER
+            secretKeyRef:
+              name: db-secret-rasul
+              key: db_user
         - name: DB_PASS
           valueFrom:
             secretKeyRef:
-              name: db-secret
-              key: DB_PASS
+              name: db-secret-rasul
+              key: db_password

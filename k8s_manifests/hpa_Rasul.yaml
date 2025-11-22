@@ -1,0 +1,14 @@
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: python-app-hpa-rasul
+  labels:
+    owner: rasul
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: python-app-deployment-rasul # Должно совпадать с именем в deployment_Rasul.yaml
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 50
