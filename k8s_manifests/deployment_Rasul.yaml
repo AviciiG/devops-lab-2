@@ -17,30 +17,44 @@ spec:
     spec:
       containers:
       - name: python-app-rasul
-        # Указываем ваш образ
+        # Твой локально собранный образ
         image: aviciig/python-devops:latest 
+        
+        # ВАЖНО: Запрещаем качать из интернета, используем локальный образ
+        imagePullPolicy: Never 
+
         ports:
         - containerPort: 8080
+        
+        # ВАЖНО: Лимиты ресурсов нужны для работы HPA (автоскейлинга)
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+
         env:
-        # Подтягиваем переменные из ConfigMap (требование Part 3)
+        # Подтягиваем переменные из ConfigMap
         - name: DB_HOST
           valueFrom:
             configMapKeyRef:
-              name: db-config-rasul
+              name: app-config-rasul
               key: db_host
         - name: DB_NAME
           valueFrom:
             configMapKeyRef:
-              name: db-config-rasul
+              name: app-config-rasul
               key: db_name
-        # Подтягиваем пароль из Secret (требование Part 3)
+        # Подтягиваем пароль из Secret
         - name: DB_USER
           valueFrom:
             secretKeyRef:
-              name: db-secret-rasul
+              name: app-secret-rasul
               key: db_user
         - name: DB_PASS
           valueFrom:
             secretKeyRef:
-              name: db-secret-rasul
+              name: app-secret-rasul
               key: db_password

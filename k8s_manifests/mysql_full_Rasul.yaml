@@ -1,0 +1,54 @@
+# Этот файл создаст базу данных MySQL внутри вашего кластера Kubernetes
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment-rasul
+  labels:
+    app: mysql-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql-db
+  template:
+    metadata:
+      labels:
+        app: mysql-db
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "rootpassword"
+        # Берем имя базы, юзера и пароль из тех же секретов, что и приложение
+        - name: MYSQL_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: app-config-rasul
+              key: db_name
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: app-secret-rasul
+              key: db_user
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secret-rasul
+              key: db_password
+        ports:
+        - containerPort: 3306
+
+---
+# Сервис, который делает базу доступной по имени "mysql-service"
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service # Это имя ищет ваш Python-код
+spec:
+  selector:
+    app: mysql-db
+  ports:
+    - port: 3306
+      targetPort: 3306
