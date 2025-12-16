@@ -1,25 +1,30 @@
-version: '3'
+version: '3.8'
 services:
   web-app:
     build:
-      context: .
+      context: ./app
       dockerfile: Dockerfile_Rasul
     ports:
-      - "8080:8080"
+      - "8080:5000"
     depends_on:
       - db-server
     environment:
       DB_HOST: db-server
-      DB_NAME: devops_lab
-      DB_USER: devops
-      DB_PASS: secretpassword
+      POSTGRES_DB: devops_lab
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secretpassword
+      DB_PORT: 5432
 
   db-server:
-    image: mysql:8.0
+    image: postgres:13
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: devops_lab
-      MYSQL_USER: devops
-      MYSQL_PASSWORD: secretpassword
+      POSTGRES_DB: devops_lab
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secretpassword
     ports:
-      - "3307:3306"
+      - "5433:5432"
+    volumes:
+      - pgdata_rasul:/var/lib/postgresql/data
+
+volumes:
+  pgdata_rasul:

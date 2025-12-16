@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-app-rasul
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-app-rasul
+  template:
+    metadata:
+      labels:
+        app: todo-app-rasul
+    spec:
+      containers:
+      - name: web
+        image: devops-lab-web-app:latest  # Имя образа из docker-compose (проверь docker images)
+        imagePullPolicy: Never            # БРАТЬ ЛОКАЛЬНЫЙ ОБРАЗ
+        ports:
+        - containerPort: 5000
+        env:
+        - name: DB_HOST
+          value: "postgres" # В K8s это будет имя сервиса БД (ниже)
+        - name: DB_PORT
+          value: "5432"
+        - name: POSTGRES_DB
+          value: "devops_lab"
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          value: "secretpassword"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-service-rasul
+spec:
+  type: NodePort
+  selector:
+    app: todo-app-rasul
+  ports:
+    - port: 80
+      targetPort: 5000
+      nodePort: 30007
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+spec:
+  containers:
+  - name: postgres
+    image: postgres:13
+    env:
+    - name: POSTGRES_DB
+      value: "devops_lab"
+    - name: POSTGRES_USER
+      value: "postgres"
+    - name: POSTGRES_PASSWORD
+      value: "secretpassword"
+    ports:
+    - containerPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  ports:
+  - port: 5432
+  selector:
+    app: postgres

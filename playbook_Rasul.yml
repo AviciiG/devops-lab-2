@@ -1,25 +1,66 @@
-- hosts: all
+---
+- name: Setup DevOps Environment (Rasul Exam)
+  hosts: localhost
+  connection: local
   become: yes
+
+  vars:
+    docker_packages:
+      - docker.io
+      - curl
+      - python3-pip
+      - openjdk-17-jre # Нужен для Jenkins
+    k8s_version: "v1.28.2"
+    project_user: "rasul_devops"
+
   tasks:
-    - name: Install Docker and Dependencies
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+
+    - name: Create project user
+      user:
+        name: "{{ project_user }}"
+        shell: /bin/bash
+        groups: docker
+        append: yes
+
+    - name: Install basic dependencies and Docker
       apt:
         name: "{{ item }}"
         state: present
+      loop: "{{ docker_packages }}"
+      notify: Restart Docker # Вызов хендлера
+
+    - name: Add Jenkins Key
+      get_url:
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+        dest: /usr/share/keyrings/jenkins-keyring.asc
+
+    - name: Add Jenkins Repo
+      apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
+        state: present
+
+    - name: Install Jenkins
+      apt:
+        name: jenkins
+        state: present
         update_cache: yes
-      loop:
-        - docker.io
-        - curl
-        - python3-pip
 
-    - name: Install Kubectl
-      shell: |
-        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-        install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+    - name: Download Kubectl
+      get_url:
+        url: "https://dl.k8s.io/release/{{ k8s_version }}/bin/linux/amd64/kubectl"
+        dest: /usr/local/bin/kubectl
+        mode: '0755'
 
-    - name: Copy K8s Manifests
-      copy:
-        src: ./k8s_manifests/
-        dest: /home/devops/k8s_project/
+    - name: Apply Kubernetes manifests
+      command: kubectl apply -f /opt/devops-project/k8s/
+      ignore_errors: yes 
 
-    - name: Apply K8s Configuration
-      command: kubectl apply -f /home/devops/k8s_project/
+  handlers:
+    - name: Restart Docker
+      service:
+        name: docker
+        state: restarted
